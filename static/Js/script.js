@@ -2,6 +2,117 @@
 document.addEventListener("DOMContentLoaded", () => {
   const movieContainer = document.getElementById("movie-results");
   const reviewContainer = document.getElementById("review-history");
+
+  const searchInput = document.getElementById("global-search");
+  const reviewInput = document.getElementById("review-text");
+  const micSearchBtn = document.getElementById("mic-search");
+  const micReviewBtn = document.getElementById("mic-review");
+
+  // 🎤 Speech recognition setup
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognition;
+
+  if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+
+    // Start speech recognition on mic click
+    const startRecognition = (inputElement) => {
+      recognition.start();
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        inputElement.value = transcript;
+      };
+    };
+
+    micSearchBtn.addEventListener("click", () => startRecognition(searchInput));
+    micReviewBtn.addEventListener("click", () => startRecognition(reviewInput));
+  }
+
+  // 🎬 Search movies
+  document.getElementById("search-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const query = searchInput.value.trim();
+    if (!query) return;
+
+    const response = await fetch(`/search?query=${encodeURIComponent(query)}`);
+    const data = await response.json();
+
+    movieContainer.innerHTML = ""; // Clear previous results
+
+    if (data.results && data.results.length > 0) {
+      data.results.forEach((movie) => {
+        const card = document.createElement("div");
+        card.classList.add("movie-card");
+
+        card.innerHTML = `
+          <img src="https://image.tmdb.org/t/p/w200${movie.poster_path}" alt="${movie.title}">
+          <h3>${movie.title} (${movie.release_date ? movie.release_date.split("-")[0] : "N/A"})</h3>
+          <p>${movie.overview ? movie.overview.substring(0, 100) + "..." : "No description available."}</p>
+          <button class="select-movie" data-id="${movie.id}">Select</button>
+        `;
+
+        movieContainer.appendChild(card);
+      });
+    } else {
+      movieContainer.innerHTML = "<p>No movies found.</p>";
+    }
+  });
+
+  // 🎬 Handle selecting a movie
+  movieContainer.addEventListener("click", async (e) => {
+    if (e.target.classList.contains("select-movie")) {
+      const movieId = e.target.getAttribute("data-id");
+
+      const response = await fetch(`/movie/${movieId}`);
+      const data = await response.json();
+
+      // Update trailer
+      const trailerFrame = document.getElementById("youtube-trailer");
+      if (data.trailer_url) {
+        trailerFrame.src = `https://www.youtube.com/embed/${data.trailer_url}`;
+        trailerFrame.style.display = "block";
+      } else {
+        trailerFrame.style.display = "none";
+      }
+
+      // Show details (replace with your existing detail container)
+      alert(`Selected: ${data.title}`);
+    }
+  });
+
+  // 📝 Submit review
+  document.getElementById("review-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const reviewText = reviewInput.value.trim();
+    if (!reviewText) return;
+
+    const response = await fetch("/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ review: reviewText }),
+    });
+
+    const data = await response.json();
+
+    // Append review history
+    const entry = document.createElement("div");
+    entry.classList.add("review-entry");
+    entry.innerHTML = `
+      <p><strong>Review:</strong> ${reviewText}</p>
+      <p><strong>Sentiment:</strong> ${data.sentiment}</p>
+      <p><strong>Word Count:</strong> ${data.word_count}</p>
+    `;
+    reviewContainer.prepend(entry);
+
+    reviewInput.value = "";
+  });
+});
+
+/*document.addEventListener("DOMContentLoaded", () => {
+  const movieContainer = document.getElementById("movie-results");
+  const reviewContainer = document.getElementById("review-history");
   const searchInput = document.getElementById("global-search");
   const reviewInput = document.getElementById("review-text");
   const micSearchBtn = document.getElementById("mic-search");
@@ -150,7 +261,7 @@ document.addEventListener("DOMContentLoaded", () => {
       themeToggleBtn.innerText = "🌙 Dark Mode";
     }
   });
-});
+});*/
 
 /*document.addEventListener("DOMContentLoaded", () => {
   const movieContainer = document.getElementById("movie-results");

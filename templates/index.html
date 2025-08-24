@@ -1,4 +1,51 @@
-<!doctype html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Movie Review Analyzer</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='Css/style.css') }}">
+</head>
+<body>
+  <!-- HEADER -->
+  <header>
+    <h1>Movie Review Analyzer</h1>
+    <form id="search-form">
+      <input id="global-search" placeholder="Search movies..." />
+      <button type="submit">Search</button>
+      <button type="button" id="mic-search">🎤</button>
+    </form>
+  </header>
+
+  <!-- TRAILER -->
+  <section id="trailer-section">
+    <iframe id="youtube-trailer" width="560" height="315" style="display:none;" frameborder="0" allowfullscreen></iframe>
+  </section>
+
+  <!-- MOVIE RESULTS -->
+  <main>
+    <section id="movie-results" class="cards-grid">
+      <!-- Movie cards will be injected here by JS -->
+    </section>
+
+    <!-- REVIEW HISTORY -->
+    <aside>
+      <h2>Review History</h2>
+      <div id="review-history"></div>
+
+      <h3>Add Review</h3>
+      <form id="review-form">
+        <textarea id="review-text" placeholder="Write your review..."></textarea>
+        <button type="submit">Submit Review</button>
+        <button type="button" id="mic-review">🎤</button>
+      </form>
+    </aside>
+  </main>
+
+  <script src="{{ url_for('static', filename='Js/script.js') }}"></script>
+</body>
+</html>
+
+<!--<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -9,7 +56,7 @@
 <body>
 
   <!-- HEADER -->
-  <header>
+  <!--<header>
     <h1>Movie Review Analyzer</h1>
     <div class="search-row">
       <input id="global-search" placeholder="Search movies (TMDb)..." />
@@ -19,12 +66,12 @@
   </header>
 
   <!-- MOBILE FILTER TOGGLE -->
-  <button id="toggle-filters" class="mobile-filter-btn">Show Filters</button>
+  <!--<button id="toggle-filters" class="mobile-filter-btn">Show Filters</button>
 
   <!-- MAIN LAYOUT -->
-  <main>
+  <!--<main>
     <!-- LEFT: Filters -->
-    <section class="left" id="filters-section">
+    <!--<section class="left" id="filters-section">
       <div class="filters-container">
         <h2>Movie Filters</h2>
         <div class="filter-row">
@@ -73,14 +120,14 @@
     </section>
 
     <!-- CENTER: Movies -->
-    <section class="center">
+    <!--<section class="center">
       <h2>Movies</h2>
       <div id="movie-results" class="cards-grid">
         <!-- Movies injected here -->
-      </div>
+      <!--</div>
 
       <!-- 🎬 TRAILER SECTION -->
-      <div id="trailer-section" style="margin-top:20px; display:none;">
+      <!--<div id="trailer-section" style="margin-top:20px; display:none;">
         <h2>Trailer</h2>
         <iframe id="youtube-trailer"
                 width="560"
@@ -92,7 +139,7 @@
     </section>
 
     <!-- RIGHT: Review History -->
-    <aside class="right">
+    <!--<aside class="right">
       <h2>Review History</h2>
       <div id="review-history"></div>
 
@@ -108,7 +155,7 @@
 
   <script src="{{ url_for('static', filename='Js/script.js') }}"></script>
 </body>
-</html>
+</html>-->
 
 <!--<!doctype html>
 <html lang="en">
