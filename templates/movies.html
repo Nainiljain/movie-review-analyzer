@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Movie Review Analyzer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='Css/style.css') }}">
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <h1>Movie Review Analyzer</h1>
+    <div class="search-row">
+      <a href="/watchlist" style="color:white; text-decoration:none; margin-right: 15px;">❤️ Watchlist</a>
+      <a href="/compare" style="color:white; text-decoration:none; margin-right: 15px;">🆚 Compare</a>
+
+      <div class="search-group" style="display: flex; align-items: center; margin-right: 15px;">
+        <input id="global-search" placeholder="Search movies..."
+          style="padding: 6px; border-radius: 4px; border: none;" />
+        <button id="btn-search" style="margin-left: 5px; padding: 6px 12px; cursor: pointer;">Search</button>
+        <button id="mic-search" class="mic-btn" style="margin-left: 5px;">🎤</button>
+      </div>
+
+      {% if session.get('user_id') %}
+      <span style="color: yellow; margin-right: 10px; font-weight: bold;">Welcome, {{ session.get('username') }}</span>
+      <a href="/logout"
+        style="color:white; text-decoration:none; border: 1px solid white; padding: 5px 10px; border-radius: 4px;">Logout</a>
+      {% else %}
+      <a href="/login" style="color:white; text-decoration:none; margin-right: 15px;">Login</a>
+      <a href="/register"
+        style="background: white; color: #0b74de; text-decoration:none; padding: 5px 12px; border-radius: 20px; font-weight: bold;">Sign
+        Up</a>
+      {% endif %}
+
+      <button id="toggle-dark-mode" style="margin-left: 15px;">🌙</button>
+    </div>
+  </header>
+
+  <!-- MOBILE FILTER TOGGLE -->
+  <button id="toggle-filters" class="mobile-filter-btn">Show Filters</button>
+
+  <!-- MAIN LAYOUT -->
+  <main>
+    <!-- LEFT: Filters -->
+    {% if show_filters %}
+    <section class="left" id="filters-section">
+      <button id="toggle-filters" class="btn btn-secondary" style="display: none; margin-bottom: 1rem;">Show
+        Filters</button>
+      <div class="filters-container">
+        <h2>Movie Filters</h2>
+        <div class="filter-row">
+          <label>Genre:</label>
+          <select id="filter-genre">
+            <option value="">All</option>
+            {% for g in genres %}
+            <option value="{{ g.id }}">{{ g.name }}</option>
+            {% endfor %}
+          </select>
+
+          <label>Year:</label>
+          <input id="filter-year" type="number" placeholder="2024" min="1900" max="2100" />
+
+          <label>Min Rating:</label>
+          <input id="filter-rating" type="number" step="0.1" min="0" max="10" placeholder="7.5" />
+
+          <button id="apply-movie-filters">Apply</button>
+        </div>
+
+        <h2>Review Filters</h2>
+        <div class="filter-row">
+          <label>Sentiment:</label>
+          <select id="filter-sentiment">
+            <option value="">All</option>
+            <option value="positive">Positive</option>
+            <option value="neutral">Neutral</option>
+            <option value="negative">Negative</option>
+          </select>
+
+          <label>Date:</label>
+          <select id="filter-date">
+            <option value="desc">Newest First</option>
+            <option value="asc">Oldest First</option>
+          </select>
+
+          <label>Min Words:</label>
+          <input id="filter-min-words" type="number" min="0" placeholder="0" />
+
+          <button id="apply-review-filters">Apply Reviews</button>
+        </div>
+
+        <h2>Quick Search in Results</h2>
+        <input id="filter-search" placeholder="Filter visible results by title..." />
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- CENTER: Movies -->
+    <section class="center">
+      <h2>Movies</h2>
+      <div id="movie-results" class="cards-grid">
+        <!-- Movies injected here -->
+      </div>
+    </section>
+
+    <!-- RIGHT: Review History -->
+    <aside class="right">
+      <h2>Analytics</h2>
+      <div id="analytics-section">
+        <canvas id="sentiment-chart" width="200" height="200"></canvas>
+        <div id="wordcloud-container" style="margin-top: 20px; text-align: center;">
+          <h4>Word Cloud</h4>
+          <img id="wordcloud-img" style="max-width: 100%; border: 1px solid #ddd;" alt="Word Cloud not available" />
+        </div>
+        <div style="margin-top: 15px; text-align: center;">
+          <a href="/api/export_csv" class="btn-export">Download CSV</a>
+        </div>
+      </div>
+
+      <h2>Review History</h2>
+      <div id="review-history"></div>
+
+      <h3>Add a Review</h3>
+      <div class="add-review">
+        <input id="review-movie-title" placeholder="Movie title" />
+        <textarea id="review-text" placeholder="Write your review..."></textarea>
+        <button id="mic-review" class="mic-btn">🎤</button>
+        <button id="btn-add-review">Submit Review</button>
+      </div>
+    </aside>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="{{ url_for('static', filename='Js/script.js') }}"></script>
+</body>
+
+</html>
+
+<!-- templates/index.html -->
+<!--<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Movie Review Analyzer — Filters</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='Css/style.css') }}">
+</head>
+<body>
+-->
+<!-- ==========================
+       HEADER SECTION
+  ========================== -->
+<!--<header>
+    <h1>Movie Review Analyzer</h1>
+    <div class="search-row">
+      <input id="global-search" placeholder="Search movies (TMDb)..." />
+      <button id="btn-search">Search</button>
+    </div>
+  </header>
+-->
+<!-- ==========================
+       MOBILE FILTER TOGGLE BUTTON
+  ========================== -->
+<!--<button id="toggle-filters" class="mobile-filter-btn">Show Filters</button>
+-->
+<!-- ==========================
+       MAIN LAYOUT
+  ========================== -->
+<!--<main>-->
+
+<!-- --------------------------
+         LEFT: FILTERS SECTION
+    -------------------------- -->
+<!--<section class="left" id="filters-section">
+      <div class="filters-container">
+
+        <!-- Movie Filters -->
+<!--<h2>Movie Filters</h2>
+        <div class="filter-row">
+          <label>Genre:</label>
+          <select id="filter-genre">
+            <option value="">All</option>
+            {% for g in genres %}
+              <option value="{{ g.id }}">{{ g.name }}</option>
+            {% endfor %}
+          </select>
+
+          <label>Year:</label>
+          <input id="filter-year" type="number" placeholder="2024" min="1900" max="2100" />
+
+          <label>Min Rating:</label>
+          <input id="filter-rating" type="number" step="0.1" min="0" max="10" placeholder="7.5" />
+
+          <button id="apply-movie-filters">Apply</button>
+        </div>
+      -->
+<!-- Review Filters -->
+<!--<h2>Review Filters</h2>
+        <div class="filter-row">
+          <label>Sentiment:</label>
+          <select id="filter-sentiment">
+            <option value="">All</option>
+            <option value="positive">Positive</option>
+            <option value="neutral">Neutral</option>
+            <option value="negative">Negative</option>
+          </select>
+
+          <label>Date:</label>
+          <select id="filter-date">
+            <option value="desc">Newest First</option>
+            <option value="asc">Oldest First</option>
+          </select>
+
+          <label>Min Words:</label>
+          <input id="filter-min-words" type="number" min="0" placeholder="0" />
+
+          <button id="apply-review-filters">Apply Reviews</button>
+        </div>
+      -->
+<!-- Quick Search -->
+<!--<h2>Quick Search in Results</h2>
+        <input id="filter-search" placeholder="Filter visible results by title..." />
+      </div>
+    </section>
+  -->
+<!-- --------------------------
+         CENTER: MOVIES SECTION
+    -------------------------- -->
+<!--<section class="center">
+      <h2>Movies</h2>
+      <div id="movie-results" class="cards-grid">
+        <!-- Movie cards injected here -->
+<!--</div>
+    </section>
+  -->
+<!-- --------------------------
+         RIGHT: REVIEW HISTORY & ADD REVIEW
+    -------------------------- -->
+<!--<aside class="right">
+      <h2>Review History</h2>
+      <div id="review-history">
+        <!-- Reviews injected here -->
+<!--</div>
+
+      <h3>Add a Review</h3>
+      <div class="add-review">
+        <input id="review-movie-title" placeholder="Movie title" />
+        <textarea id="review-text" placeholder="Write your review..."></textarea>
+        <button id="btn-add-review">Submit Review</button>
+      </div>
+    </aside>
+  </main>
+-->
+<!-- ==========================
+       SCRIPT SECTION
+  ========================== -->
+<!--<script src="{{ url_for('static', filename='Js/script.js') }}"></script>
+</body>
+</html>
+-->
+<!-- templates/index.html -->
+<!-- 
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Movie Review Analyzer — Filters</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='Css/style.css') }}">
+</head>
+<body>
+  <header>
+    <div style="display: flex; align-items: center; gap: 15px;">
+      <h1><a href="/" style="color: white; text-decoration: none;">Movie Review Analyzer</a></h1>
+      <span style="font-size: 0.9em; opacity: 0.8;">Browse & Analyze</span>
+    </div>
+    <div class="search-row">
+      <input id="global-search" placeholder="Search movies (TMDb)..." />
+      <button id="btn-search">Search</button>
+      <button id="mic-search" class="mic-btn">🎤</button>
+      <button id="toggle-dark-mode" style="margin-left: 10px;">🌙</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Left Filters Sidebar -->
+<!-- 
+    <section class="left">
+      <div class="filters-container">
+        <h2>Movie Filters</h2>
+        <div class="filter-row">
+          <label>Genre:</label>
+          <select id="filter-genre">
+            <option value="">All</option>
+            {% for g in genres %}
+              <option value="{{ g.id }}">{{ g.name }}</option>
+            {% endfor %}
+          </select>
+
+          <label>Year:</label>
+          <input id="filter-year" type="number" placeholder="2024" min="1900" max="2100" />
+
+          <label>Min Rating:</label>
+          <input id="filter-rating" type="number" step="0.1" min="0" max="10" placeholder="7.5" />
+
+          <button id="apply-movie-filters">Apply</button>
+        </div>
+
+        <h2>Review Filters</h2>
+        <div class="filter-row">
+          <label>Sentiment:</label>
+          <select id="filter-sentiment">
+            <option value="">All</option>
+            <option value="positive">Positive</option>
+            <option value="neutral">Neutral</option>
+            <option value="negative">Negative</option>
+          </select>
+
+          <label>Date:</label>
+          <select id="filter-date">
+            <option value="desc">Newest First</option>
+            <option value="asc">Oldest First</option>
+          </select>
+
+          <label>Min Words:</label>
+          <input id="filter-min-words" type="number" min="0" placeholder="0" />
+
+          <button id="apply-review-filters">Apply Reviews</button>
+        </div>
+
+        <h2>Quick Search in Results</h2>
+        <input id="filter-search" placeholder="Filter visible results by title..." />
+      </div>
+    </section>
+
+    <!-- Center Movies -->
+<!-- 
+    <section class="center">
+      <h2>Movies</h2>
+      <div id="movie-results" class="cards-grid">
+        <!-- movie cards will be injected here -->
+<!--
+      </div>
+    </section>
+
+    <!-- Right Review History -->
+<!--
+    <aside class="right">
+      <h2>Review History</h2>
+      <div id="review-history">
+        <!-- reviews injected here -->
+<!--</div>-->
+<!--
+      <h3>Add a Review</h3>
+      <div class="add-review">
+        <input id="review-movie-title" placeholder="Movie title" />
+        <textarea id="review-text" placeholder="Write your review..."></textarea>
+        <button id="btn-add-review">Submit Review</button>
+      </div>
+    </aside>
+  </main>
+
+  <script src="{{ url_for('static', filename='Js/script.js') }}"></script>
+</body>
+</html>
+-->
+<!--
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Movie Review Analyzer — Filters</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='Css/style.css') }}">
+</head>
+<body>
+  <header>
+    <h1>Movie Review Analyzer</h1>
+    <div class="search-row">
+      <input id="global-search" placeholder="Search movies (TMDb)..." />
+      <button id="btn-search">Search</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="left">
+      <div class="filters-container">
+        <h2>Movie Filters</h2>
+        <div class="filter-row">
+          <label>Genre:</label>
+          <select id="filter-genre">
+            <option value="">All</option>
+            {% for g in genres %}
+              <option value="{{ g.id }}">{{ g.name }}</option>
+            {% endfor %}
+          </select>
+
+          <label>Year:</label>
+          <input id="filter-year" type="number" placeholder="2024" min="1900" max="2100" />
+
+          <label>Min Rating:</label>
+          <input id="filter-rating" type="number" step="0.1" min="0" max="10" placeholder="7.5" />
+
+          <button id="apply-movie-filters">Apply</button>
+        </div>
+
+        <h2>Review Filters</h2>
+        <div class="filter-row">
+          <label>Sentiment:</label>
+          <select id="filter-sentiment">
+            <option value="">All</option>
+            <option value="positive">Positive</option>
+            <option value="neutral">Neutral</option>
+            <option value="negative">Negative</option>
+          </select>
+
+          <label>Date:</label>
+          <select id="filter-date">
+            <option value="desc">Newest First</option>
+            <option value="asc">Oldest First</option>
+          </select>
+
+          <label>Min Words:</label>
+          <input id="filter-min-words" type="number" min="0" placeholder="0" />
+
+          <button id="apply-review-filters">Apply Reviews</button>
+        </div>
+
+        <h2>Quick Search in Results</h2>
+        <input id="filter-search" placeholder="Filter visible results by title..." />
+      </div>
+    </section>
+
+    <section class="center">
+      <h2>Movies</h2>
+      <div id="movie-results" class="cards-grid">
+        <!-- movie cards will be injected here -->
+<!--   </div>
+    </section>
+
+    <aside class="right">
+      <h2>Review History</h2>
+      <div id="review-history">
+        <!-- reviews injected here -->
+<!--</div>
+
+      <h3>Add a Review</h3>
+      <div class="add-review">
+        <input id="review-movie-title" placeholder="Movie title" />
+        <textarea id="review-text" placeholder="Write your review..."></textarea>
+        <button id="btn-add-review">Submit Review</button>
+      </div>
+    </aside>
+  </main>
+
+  <!-- BOTTOM NAVIGATION -->
+<nav class="bottom-nav">
+  <a href="/" class="bottom-nav-item active">
+    <span>🎬</span>
+    <span>Movies</span>
+  </a>
+  <a href="/watchlist" class="bottom-nav-item">
+    <span>❤️</span>
+    <span>Watchlist</span>
+  </a>
+  <a href="/compare" class="bottom-nav-item">
+    <span>🆚</span>
+    <span>Compare</span>
+  </a>
+  {% if session.get('user_id') %}
+  <a href="/logout" class="bottom-nav-item">
+    <span>👤</span>
+    <span>Logout</span>
+  </a>
+  {% else %}
+  <a href="/login" class="bottom-nav-item">
+    <span>🔑</span>
+    <span>Login</span>
+  </a>
+  {% endif %}
+</nav>
+
+<script src="{{ url_for('static', filename='Js/script.js') }}"></script>
+</body>
+
+</html>
+-->

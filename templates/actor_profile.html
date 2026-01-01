@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>{{ person.name }} - Actor Profile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='Css/style.css') }}">
+    <style>
+        .profile-header {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 50px;
+            flex-wrap: wrap;
+        }
+
+        .profile-header img {
+            width: 300px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .profile-info h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            color: #0b74de;
+        }
+
+        .biography {
+            line-height: 1.8;
+            font-size: 1.1em;
+            color: #444;
+            max-width: 800px;
+        }
+
+        .movies-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 25px;
+        }
+
+        .body.dark-mode .profile-info h1 {
+            color: #fff;
+        }
+
+        .body.dark-mode .biography {
+            color: #ccc;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <h1><a href="/" style="color: white; text-decoration: none;">Movie Review Analyzer</a></h1>
+        </div>
+        <div class="search-row">
+            <a href="/browse" style="color:white; text-decoration:none; margin-right: 20px;">Browse Movies</a>
+            <a href="/watchlist" style="color:white; text-decoration:none; margin-right: 20px;">❤️ Watchlist</a>
+            <button id="toggle-dark-mode">🌙</button>
+        </div>
+    </header>
+
+    <main style="max-width: 1200px; margin: 0 auto; padding: 40px 20px;">
+        <div class="profile-header">
+            <img src="https://image.tmdb.org/t/p/w500{{ person.profile_path }}" alt="{{ person.name }}"
+                onerror="this.src='https://via.placeholder.com/300x450?text=No+Photo'">
+            <div class="profile-info">
+                <h1>{{ person.name }}</h1>
+                <div class="meta-row" style="margin-bottom:20px; font-size:1.2em; color:#666;">
+                    <span>Born: {{ person.birthday }}</span> •
+                    <span>Place: {{ person.place_of_birth }}</span>
+                </div>
+                <h3>Biography</h3>
+                <div class="biography">
+                    {{ person.biography if person.biography else "No biography available." }}
+                </div>
+            </div>
+        </div>
+
+        <h2 class="section-title">Known For ({{ movies|length }} Movies)</h2>
+        <div class="movies-grid">
+            {% for m in movies %}
+            {% if m.poster_path %}
+            <div class="movie-card">
+                <a href="/movie/{{ m.id }}" style="text-decoration:none; color:inherit;">
+                    <img src="https://image.tmdb.org/t/p/w500{{ m.poster_path }}" alt="{{ m.title }}">
+                    <div class="movie-info">
+                        <div class="movie-title">{{ m.title }}</div>
+                        <div class="movie-rating">⭐ {{ m.vote_average }}</div>
+                    </div>
+                </a>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </main>
+    <script src="{{ url_for('static', filename='Js/script.js') }}"></script>
+</body>
+
+</html>

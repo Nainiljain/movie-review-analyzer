@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>{{ movie.title }} - Movie Review Analyzer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='Css/style.css') }}">
+</head>
+
+<body class="page-details">
+    <header>
+        <h1><a href="/">Movie Review Analyzer</a></h1>
+        <div class="search-row">
+            <a href="/browse" class="btn btn-ghost">Browse Movies</a>
+            <a href="/watchlist" class="btn btn-ghost">❤️ Watchlist</a>
+            <a href="/compare" class="btn btn-ghost">🆚 Compare</a>
+            <button id="toggle-dark-mode" class="btn btn-ghost">🌙</button>
+        </div>
+    </header>
+
+    <main>
+        <a href="javascript:history.back()" class="btn btn-ghost" style="margin-bottom: 2rem;">← Back</a>
+
+        <!-- HERO SECTION -->
+        <div class="movie-hero">
+            <div class="hero-poster">
+                <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path }}" alt="{{ movie.title }} Poster"
+                    onerror="this.src='https://via.placeholder.com/300x450?text=No+Poster'">
+            </div>
+
+            <div class="hero-content">
+                <h1>{{ movie.title }} <span style="font-size: 0.5em; color: var(--text-muted); font-weight: 400;">({{
+                        movie.release_date[:4] }})</span></h1>
+
+                <div class="hero-meta">
+                    <span>⭐ {{ movie.vote_average }}</span> •
+                    <span>{{ movie.runtime }} min</span> •
+                    <span>{% for g in movie.genres %}{{ g.name }}{% if not loop.last %}, {% endif %}{% endfor %}</span>
+                </div>
+
+                {% if movie.tagline %}
+                <div class="hero-tagline">"{{ movie.tagline }}"</div>
+                {% endif %}
+
+                <h3>Overview</h3>
+                <p class="overview">{{ movie.overview }}</p>
+
+                <div class="hero-actions">
+                    {% if movie.youtube_id %}
+                    <a href="https://www.youtube.com/watch?v={{ movie.youtube_id }}" target="_blank"
+                        class="btn btn-danger">
+                        ▶ Watch Trailer
+                    </a>
+                    {% endif %}
+
+                    {% if movie.watch_link %}
+                    <a href="{{ movie.watch_link }}" target="_blank" class="btn btn-primary" id="btn-official-download">
+                        ⬇️ Official Download/Watch
+                    </a>
+                    {% endif %}
+
+                    <button id="btn-watchlist" class="btn btn-ghost" title="Save to Watchlist" data-id="{{ movie.id }}"
+                        data-title="{{ movie.title }}" data-poster="{{ movie.poster_path }}"
+                        data-date="{{ movie.release_date }}" data-rating="{{ movie.vote_average }}"
+                        style="font-size: 1.5rem; padding: 0.5rem 1rem;">
+                        🤍
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CAST SECTION -->
+        <h2 style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem;">Top Cast
+        </h2>
+        <div class="cast-grid">
+            {% for person in movie.credits.cast[:12] %}
+            <div class="person-card">
+                <a href="/actor/{{ person.id }}" style="text-decoration:none; color:inherit;">
+                    <img src="https://image.tmdb.org/t/p/w200{{ person.profile_path }}" alt="{{ person.name }}"
+                        onerror="this.src='https://via.placeholder.com/200x300?text=No+Image'">
+                    <div class="person-name">{{ person.name }}</div>
+                </a>
+                <div class="person-role">{{ person.character }}</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <h2
+            style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem; margin-top: 3rem;">
+            Credits</h2>
+        <div class="cast-grid">
+            {% for person in movie.credits.crew %}
+            {% if person.job in ['Director', 'Producer', 'Writer', 'Screenplay'] %}
+            <div class="person-card">
+                <img src="https://image.tmdb.org/t/p/w200{{ person.profile_path }}" alt="{{ person.name }}"
+                    onerror="this.src='https://via.placeholder.com/200x300?text=No+Image'">
+                <div class="person-name">{{ person.name }}</div>
+                <div class="person-role">{{ person.job }}</div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- REVIEWS & ANALYTICS -->
+        <div class="analysis-section">
+            <h2 style="margin-bottom: 2rem;">Analysis & Reviews</h2>
+
+            <!-- Charts Row -->
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-bottom: 3rem;">
+                <div class="card" style="padding: 1.5rem; text-align: center;">
+                    <h4 style="margin-bottom: 1rem;">Sentiment Distribution</h4>
+                    <canvas id="detail-sentiment-chart" height="200"></canvas>
+                </div>
+                <div class="card" style="padding: 1.5rem; text-align: center;">
+                    <h4 style="margin-bottom: 1rem;">Word Cloud</h4>
+                    <img id="detail-wordcloud-img" style="max-width: 100%; max-height: 250px; border-radius: 8px;"
+                        alt="Word Cloud (Submit review to generate)" />
+                </div>
+            </div>
+
+            <!-- Add Review Form -->
+            <div class="card" style="padding: 1.5rem; margin-bottom: 2rem; background: var(--bg-body);">
+                <h3>Write a Review</h3>
+                <input type="hidden" id="detail-movie-title" value="{{ movie.title }}">
+                <textarea id="detail-review-text" placeholder="What did you think of the movie?" rows="4"
+                    style="margin-bottom: 1rem;"></textarea>
+                <button id="btn-detail-add-review" class="btn btn-success">Submit Analysis</button>
+            </div>
+
+            <div id="review-history">
+                {% if reviews %}
+                {% for r in reviews %}
+                <div class="review-item">
+                    <div class="r-head"><strong>{{ r.movie_title }}</strong>
+                        <span class="meta">{{ r.sentiment_label }} • {{ r.word_count }} words • {{ r.date_created
+                            }}</span>
+                    </div>
+                    <p class="r-text">{{ r.review_text }}</p>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p style="color: var(--text-muted); font-style: italic;">No reviews analyzed for this movie yet. Be the
+                    first!</p>
+                {% endif %}
+            </div>
+        </div>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        window.IS_LOGGED_IN = "{{ 'true' if session.get('user_id') else 'false' }}" === "true";
+    </script>
+    <script src="{{ url_for('static', filename='Js/script.js') }}"></script>
+</body>
+
+</html>

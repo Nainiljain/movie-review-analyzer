@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>My Watchlist - Movie Review Analyzer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='Css/style.css') }}">
+</head>
+
+<body>
+    <header>
+        <h1><a href="/">Movie Review Analyzer</a></h1>
+        <div class="search-row">
+            <a href="/browse" class="btn btn-ghost">Browse Movies</a>
+            <button id="toggle-dark-mode" class="btn btn-ghost">🌙</button>
+        </div>
+    </header>
+
+    <main class="center" style="max-width: 1200px; margin: 0 auto; display: block;">
+        <h2 style="margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">❤️ My
+            Watchlist</h2>
+        <div id="watchlist-container" class="cards-grid">
+            <!-- Populated by JS -->
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='Js/script.js') }}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const container = document.getElementById("watchlist-container");
+
+            fetch("/api/watchlist")
+                .then(r => r.json())
+                .then(movies => {
+                    if (movies.length === 0) {
+                        container.innerHTML = `
+                            <div style="grid-column: 1/-1; text-align: center; padding: 4rem; color: var(--text-muted);">
+                                <h3>Your watchlist is empty</h3>
+                                <p style="margin-bottom: 2rem;">Go explore movies and click "Save to Watchlist"!</p>
+                                <a href="/browse" class="btn btn-primary">Browse Movies</a>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    movies.forEach(movie => {
+                        const card = document.createElement("div");
+                        card.className = "movie-card";
+                        const posterUrl = movie.poster_path
+                            ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+                            : "https://via.placeholder.com/500x750?text=No+Image";
+
+                        // Create card structure to match index.html style
+                        card.innerHTML = `
+                            <div style="display: flex; flex-direction: column; height: 100%;">
+                                <a href="/movie/${movie.id}" style="text-decoration:none; color:inherit; flex: 1;">
+                                    <img src="${posterUrl}" alt="${movie.title}" style="border-radius: var(--radius-md) var(--radius-md) 0 0;">
+                                    <div class="info">
+                                        <h3>${movie.title}</h3>
+                                        <p>⭐ ${movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A'} • ${movie.release_date ? movie.release_date.substring(0, 4) : ''}</p>
+                                    </div>
+                                </a>
+                                <div class="actions" style="padding: 10px;">
+                                    <button class="btn btn-danger remove-btn" data-id="${movie.id}" style="width:100%;">Remove</button>
+                                </div>
+                            </div>
+                        `;
+                        container.appendChild(card);
+
+                        // Remove handler
+                        card.querySelector(".remove-btn").addEventListener("click", () => {
+                            if (confirm("Remove from Watchlist?")) {
+                                fetch(`/api/watchlist/remove/${movie.id}`, { method: "DELETE" })
+                                    .then(() => {
+                                        card.style.transform = "scale(0.9)";
+                                        card.style.opacity = "0";
+                                        setTimeout(() => card.remove(), 200);
+                                    });
+                            }
+                        });
+                    });
+                });
+        });
+    </script>
+</body>
+
+</html>

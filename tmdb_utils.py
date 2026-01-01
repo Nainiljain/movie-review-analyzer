@@ -47,4 +47,36 @@ def get_movie_trailer(movie_id):
     for video in res.get("results", []):
         if video["type"] == "Trailer" and video["site"] == "YouTube":
             return video["key"]
-    return None 
+    return None
+
+
+def get_movie_details(movie_id):
+    """
+    Fetch full movie details including credits (cast/crew)
+    """
+    print(f"DEBUG: get_movie_details called for ID: {movie_id}")
+    try:
+        # append_to_response allows fetching credits in the same call
+        url = f"/movie/{movie_id}"
+        print(f"DEBUG: Requesting {url}")
+        data = _get(url, {"language": "en-US", "append_to_response": "credits,videos,watch/providers,reviews"})
+        print(f"DEBUG: Successfully fetched details for {data.get('title', 'Unknown')}")
+        return data
+    except Exception as e:
+        print(f"DEBUG: Error fetching details: {e}")
+        return None
+
+
+def get_person_details(person_id):
+    try:
+        # Fetch person details
+        return _get(f"/person/{person_id}", {"language": "en-US"})
+    except Exception:
+        return None
+
+def get_person_movie_credits(person_id):
+    try:
+        # Fetch person movie credits
+        return _get(f"/person/{person_id}/movie_credits", {"language": "en-US"})
+    except Exception:
+        return None

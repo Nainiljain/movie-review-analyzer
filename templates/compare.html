@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Compare Movies - Movie Review Analyzer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='Css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .compare-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 20px;
+            margin-top: 50px;
+            flex-wrap: wrap;
+        }
+
+        .compare-side {
+            flex: 1;
+            min-width: 300px;
+            max-width: 450px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 250px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 10px;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .stats-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stats-label {
+            font-weight: bold;
+            color: #555;
+        }
+
+        .stats-val {
+            text-align: right;
+            font-weight: bold;
+            color: #0b74de;
+        }
+
+        .winner {
+            color: #28a745;
+        }
+
+        .poster-preview {
+            width: 150px;
+            border-radius: 8px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .vs-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            font-weight: bold;
+            color: #ccc;
+            width: 80px;
+            align-self: center;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        p {
+            text-align: center;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <h1><a href="/" style="color: white; text-decoration: none;">Movie Review Analyzer</a></h1>
+        </div>
+        <div class="search-row">
+            <a href="/browse" style="color:white; text-decoration:none; margin-right: 20px;">Browse Movies</a>
+            <a href="/watchlist" style="color:white; text-decoration:none; margin-right: 20px;">❤️ Watchlist</a>
+            <button id="toggle-dark-mode">🌙</button>
+        </div>
+    </header>
+
+    <main style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+        <h2 class="section-title">🆚 Movie Face-Off</h2>
+        <p>Search for two movies to compare their stats and sentiment!</p>
+
+        <div class="compare-container">
+            <!-- LEFT SIDE -->
+            <div class="compare-side" id="side-a">
+                <input type="text" class="search-box" id="search-a" placeholder="Search Movie A..." autocomplete="off">
+                <div id="results-a"
+                    style="position:absolute; background:white; z-index:10; border:1px solid #ddd; display:none; max-width: 300px;">
+                </div>
+
+                <div id="content-a" style="display:none; text-align:center;">
+                    <img id="img-a" class="poster-preview">
+                    <h2 id="title-a"></h2>
+                    <div class="chart-container">
+                        <canvas id="chart-a"></canvas>
+                    </div>
+                    <table class="stats-table">
+                        <tr>
+                            <td class="stats-label">Rating</td>
+                            <td class="stats-val" id="rate-a"></td>
+                        </tr>
+                        <tr>
+                            <td class="stats-label">Release</td>
+                            <td class="stats-val" id="date-a"></td>
+                        </tr>
+                        <tr>
+                            <td class="stats-label">Positive Sentiment</td>
+                            <td class="stats-val" id="sent-a"></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="vs-badge">VS</div>
+
+            <!-- RIGHT SIDE -->
+            <div class="compare-side" id="side-b">
+                <input type="text" class="search-box" id="search-b" placeholder="Search Movie B..." autocomplete="off">
+                <div id="results-b"
+                    style="position:absolute; background:white; z-index:10; border:1px solid #ddd; display:none; max-width: 300px;">
+                </div>
+
+                <div id="content-b" style="display:none; text-align:center;">
+                    <img id="img-b" class="poster-preview">
+                    <h2 id="title-b"></h2>
+                    <div class="chart-container">
+                        <canvas id="chart-b"></canvas>
+                    </div>
+                    <table class="stats-table">
+                        <tr>
+                            <td class="stats-label">Rating</td>
+                            <td class="stats-val" id="rate-b"></td>
+                        </tr>
+                        <tr>
+                            <td class="stats-label">Release</td>
+                            <td class="stats-val" id="date-b"></td>
+                        </tr>
+                        <tr>
+                            <td class="stats-label">Positive Sentiment</td>
+                            <td class="stats-val" id="sent-b"></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='Js/script.js') }}"></script>
+    <script>
+        // Inline comparison logic to keep script.js clean
+        const searchA = document.getElementById('search-a');
+        const searchB = document.getElementById('search-b');
+
+        setupSearch(searchA, 'results-a', 'content-a', 'img-a', 'title-a', 'rate-a', 'date-a', 'chart-a', 'sent-a');
+        setupSearch(searchB, 'results-b', 'content-b', 'img-b', 'title-b', 'rate-b', 'date-b', 'chart-b', 'sent-b');
+
+        function setupSearch(input, resId, contentId, imgId, titleId, rateId, dateId, chartId, sentId) {
+            const resultsDiv = document.getElementById(resId);
+
+            input.addEventListener('input', () => {
+                const q = input.value;
+                if (q.length < 3) { resultsDiv.style.display = 'none'; return; }
+
+                fetch(`/search_tmdb?q=${q}&page=1`)
+                    .then(r => r.json())
+                    .then(movies => {
+                        resultsDiv.innerHTML = '';
+                        resultsDiv.style.display = 'block';
+                        movies.slice(0, 5).forEach(m => {
+                            const div = document.createElement('div');
+                            div.style.padding = '8px';
+                            div.style.cursor = 'pointer';
+                            div.innerHTML = `<b>${m.title}</b> (${m.release_date.slice(0, 4)})`;
+                            div.onclick = () => {
+                                selectMovie(m, contentId, imgId, titleId, rateId, dateId, chartId, sentId);
+                                resultsDiv.style.display = 'none';
+                                input.value = '';
+                            };
+                            resultsDiv.appendChild(div);
+                        });
+                    });
+            });
+        }
+
+        function selectMovie(movie, contentId, imgId, titleId, rateId, dateId, chartId, sentId) {
+            document.getElementById(contentId).style.display = 'block';
+            document.getElementById(imgId).src = 'https://image.tmdb.org/t/p/w200' + movie.poster_path;
+            document.getElementById(titleId).innerText = movie.title;
+            document.getElementById(rateId).innerText = movie.vote_average + "/10";
+            document.getElementById(dateId).innerText = movie.release_date;
+
+            // Fetch Sentiment
+            fetch(`/api/stats?movie_title=${encodeURIComponent(movie.title)}`)
+                .then(r => r.json())
+                .then(stats => {
+                    const total = stats.positive + stats.neutral + stats.negative || 1;
+                    const posPct = ((stats.positive / total) * 100).toFixed(1) + '%';
+                    document.getElementById(sentId).innerText = posPct;
+
+                    new Chart(document.getElementById(chartId), {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Pos', 'Neu', 'Neg'],
+                            datasets: [{
+                                data: [stats.positive, stats.neutral, stats.negative],
+                                backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+                            }]
+                        },
+                        options: {
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'bottom' }
+                            }
+                        }
+                    });
+                });
+        }
+    </script>
+</body>
+
+</html>
